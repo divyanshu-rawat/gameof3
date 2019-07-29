@@ -25,7 +25,7 @@ echo "Player Name: $player_name"
 random=$(jot -r 1 10 99)
 echo "Random number: $random"
 
-##  creating namer pipe and channelizing the output on to a different terminal.
+##  creating name pipe and channelizing the output on to a different terminal.
 ##  check to see if named pipe exists before, initially evaluates to false.
 if [ ! -p "$output" ]; then
     mkfifo "$output"
@@ -42,3 +42,43 @@ if (( random == 1 )); then
     echo "won" > "$output"
     exit
 fi
+
+## start the interaction
+echo "$random" > "$output"
+
+while true; do
+    ## read number sent from other player
+    read current < "$input"
+
+    ## the keyword "won" means that Player 2 has won.
+    if [[ "$current" -eq "won" ]]; then
+        echo
+        echo "LOSER: $player_name!"
+        exit
+    fi
+
+    echo "Number received: $current"
+
+    ## find the nearest number, that is divisible by 3.
+    ## built-in command let for performing arithmetic operations.
+    if (( current % 3 == 0 )); then
+        let "next = ((current / 3))"
+    elif (( (current + 1) % 3 == 0 )); then
+        let "next = (((current + 1) / 3))"
+    elif (( (current - 1) % 3 == 0 )); then
+        let "next = (((current - 1) / 3))"
+    fi
+
+    ## next == 1, implies Player 1 has won!.
+    if (( next == 1 )); then
+        echo
+        echo "WINNER: $player_name!"
+        echo "won" > "$output"
+        exit
+    fi
+
+    echo "Number sent: $next"
+    ## else, Player 2 turn.
+    echo "$next" > "$output"
+
+done
